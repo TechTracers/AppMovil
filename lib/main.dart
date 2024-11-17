@@ -18,9 +18,12 @@ class MyApp extends StatelessWidget {
       title: 'LockItem App',
       initialRoute: '/',
       routes: {
+        '/': (context) => const HomeScreen()
+        /**
         '/': (context) => const LoginScreen(),
         '/signup': (context) => const SignUpScreen(),
         '/home': (context) => const HomeScreen(),
+            **/
       },
     );
   }

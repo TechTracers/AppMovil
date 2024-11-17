@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lock_item/widgets/bottom_nav_bar.dart';
+import 'package:lock_item/services/store_service.dart';
+import 'package:lock_item/models/store.dart';
+import 'package:lock_item/screens/catalog_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -10,13 +13,30 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+  List<Store> stores = [];
+  bool isLoading = true;
+  final StoreService _storeService = StoreService();
 
-  final List<Widget> _pages = [
-    const Center(child: Text('Home')),
-    const Center(child: Text('Search')),
-    const Center(child: Text('Saved')),
-    const Center(child: Text('Account')),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    fetchStores();
+  }
+
+  Future<void> fetchStores() async {
+    try {
+      final data = await _storeService.fetchStores();
+      setState(() {
+        stores = data;
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching stores: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,17 +44,34 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Stores'),
       ),
-      body: GridView.count(
-        crossAxisCount: 2,
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : GridView.builder(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 16.0,
+          crossAxisSpacing: 16.0,
+        ),
         padding: const EdgeInsets.all(16.0),
-        children: [
-          _buildStoreCard('Ripley', 'assets/branch/ripley.png'),
-          _buildStoreCard('Saga Falabella', 'assets/branch/falabella.png'),
-          _buildStoreCard('Topitop', 'assets/branch/topitop.png'),
-          _buildStoreCard('Oeschle', 'assets/branch/oeschle.png'),
-          _buildStoreCard('H&M', 'assets/branch/h&m.png'),
-          _buildStoreCard('Estilos', 'assets/branch/estilos.png'),
-        ],
+        itemCount: stores.length,
+        itemBuilder: (context, index) {
+          final store = stores[index];
+          return GestureDetector(
+            onTap: () {
+              // Navegar a la pantalla del catálogo al seleccionar una tienda
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CatalogScreen(
+                    storeId: store.id, // Pasa el ID de la tienda
+                    storeName: store.name, // Pasa el nombre de la tienda
+                  ),
+                ),
+              );
+            },
+            child: _buildStoreCard(store.name, store.imageUrl),
+          );
+        },
       ),
       bottomNavigationBar: BottomNavBar(
         currentIndex: _currentIndex,
@@ -47,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildStoreCard(String storeName, String assetPath) {
+  Widget _buildStoreCard(String storeName, String imageUrl) {
     return Column(
       children: [
         Expanded(
@@ -57,7 +94,13 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             child: Padding(
               padding: const EdgeInsets.all(8.0),
-              child: Image.asset(assetPath),
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(Icons.broken_image, size: 50);
+                },
+              ),
             ),
           ),
         ),
