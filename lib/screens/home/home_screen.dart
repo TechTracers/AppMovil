@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lock_item/widgets/bottom_nav_bar.dart';
 import 'package:lock_item/services/store_service.dart';
 import 'package:lock_item/models/store.dart';
-import 'package:lock_item/screens/catalog_screen.dart';
+import 'package:lock_item/screens/home/catalog_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -73,14 +73,14 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         },
       ),
-      bottomNavigationBar: BottomNavBar(
+      /***bottomNavigationBar: BottomNavBar(
         currentIndex: _currentIndex,
         onTap: (index) {
           setState(() {
             _currentIndex = index;
           });
         },
-      ),
+      ),**/
     );
   }
 

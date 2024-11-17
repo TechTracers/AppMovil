@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:lock_item/screens/home/product_details_screen.dart';
 import 'package:lock_item/services/product_service.dart';
 
-import '../models/product.dart';
-import 'category_service.dart';
+import '../../models/product.dart';
+import '../../widgets/bottom_nav_bar.dart';
+import '../../services/category_service.dart';
 
 class CatalogScreen extends StatefulWidget {
   const CatalogScreen({super.key, required this.storeId, required this.storeName});
@@ -21,6 +23,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
   List<Product> allProducts = [];
   List<Product> filteredProducts = [];
   int? selectedCategory; // Variable para la categoría seleccionada
+  int _currentIndex = 0; // Control del índice del BottomNavBar
 
   @override
   void initState() {
@@ -78,6 +81,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                 final categories = snapshot.data!;
                 return Container(
                   height: 50,
+                  margin: const EdgeInsets.symmetric(vertical: 8.0),
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     itemCount: categories.length + 1, // +1 para el botón "Todos"
@@ -125,28 +129,18 @@ class _CatalogScreenState extends State<CatalogScreen> {
                     itemCount: filteredProducts.length,
                     itemBuilder: (context, index) {
                       final product = filteredProducts[index];
-                      return Card(
-                        elevation: 3,
-                        child: Column(
-                          children: [
-                            Image.network(
-                              product.imageUrl,
-                              height: 120,
-                              fit: BoxFit.cover,
+                      return GestureDetector(
+                        onTap: () {
+                          // Navegar a los detalles del producto
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  ProductDetailScreen(productId: product.id),
                             ),
-                            const SizedBox(height: 5),
-                            Text(
-                              product.name,
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              '\$${product.price}',
-                              style: const TextStyle(color: Colors.green),
-                            ),
-                          ],
-                        ),
+                          );
+                        },
+                        child: ProductCard(product: product),
                       );
                     },
                   );
@@ -156,6 +150,15 @@ class _CatalogScreenState extends State<CatalogScreen> {
           ),
         ],
       ),
+      /**bottomNavigationBar: BottomNavBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+          // Implementar navegación en el BottomNavBar
+        },
+      ),**/
     );
   }
 }
@@ -191,6 +194,65 @@ class CategoryButton extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
+      ),
+    );
+  }
+}
+
+class ProductCard extends StatelessWidget {
+  final Product product;
+
+  const ProductCard({
+    Key? key,
+    required this.product,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 3,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Imagen del producto
+          Expanded(
+            child: Image.network(
+              product.imageUrl,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(Icons.broken_image, size: 50);
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Nombre del producto
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Text(
+              product.name,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(height: 4),
+          // Precio del producto
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Text(
+              '\$${product.price}',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

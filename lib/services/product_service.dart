@@ -1,32 +1,30 @@
-import '../models/product.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../models/product.dart';
 
 class ProductService {
-  // URLs base de los endpoints
   static const String productsUrl = 'https://my-json-server.typicode.com/Ednoru/arquidb/products';
   static const String storeProductsUrl = 'https://my-json-server.typicode.com/Ednoru/arquidb/storeProducts';
 
-  // Método para obtener productos de una tienda específica
   Future<List<Product>> fetchStoreProducts(int storeId) async {
     try {
       // Obtén los datos de ambos endpoints
       final productsResponse = await http.get(Uri.parse(productsUrl));
       final storeProductsResponse = await http.get(Uri.parse(storeProductsUrl));
 
-      // Asegúrate de que ambas respuestas sean exitosas
+      // Verifica que ambas respuestas sean exitosas
       if (productsResponse.statusCode == 200 && storeProductsResponse.statusCode == 200) {
-        // Decodifica las respuestas JSON
+        // Decodifica los datos
         List<dynamic> productsData = json.decode(productsResponse.body);
         List<dynamic> storeProductsData = json.decode(storeProductsResponse.body);
 
         // Lista para almacenar los productos filtrados
         List<Product> filteredProducts = [];
 
-        // Filtrar productos por `storeId`
+        // Filtra los productos por `storeId`
         for (var storeProduct in storeProductsData) {
           if (storeProduct['storeId'] == storeId) {
-            // Busca el producto correspondiente en la lista de productos
+            // Busca el producto correspondiente
             final product = productsData.firstWhere(
                   (p) => p['id'] == storeProduct['productId'],
               orElse: () => null,
@@ -39,7 +37,8 @@ class ProductService {
                 name: product['name'],
                 description: product['description'],
                 imageUrl: product['imageUrl'],
-                price: storeProduct['price'].toDouble(), // Convertir el precio a double si no lo es
+                price: storeProduct['price'].toDouble(),
+                categoryId: product['categoryId'], // Aquí pasamos el categoryId desde el JSON
               ));
             }
           }
@@ -55,4 +54,36 @@ class ProductService {
       rethrow;
     }
   }
+
+  Future<Product> fetchProductById(int productId) async {
+    try {
+      final productResponse = await http.get(Uri.parse('$productsUrl/$productId'));
+      final storeProductResponse = await http.get(Uri.parse(storeProductsUrl));
+
+      if (productResponse.statusCode == 200 && storeProductResponse.statusCode == 200) {
+        final productData = json.decode(productResponse.body);
+        final storeProducts = json.decode(storeProductResponse.body);
+
+        final storeProduct = storeProducts.firstWhere(
+              (sp) => sp['productId'] == productId,
+          orElse: () => null,
+        );
+
+        return Product(
+          id: productData['id'],
+          name: productData['name'],
+          description: productData['description'],
+          imageUrl: productData['imageUrl'],
+          price: storeProduct != null ? storeProduct['price'].toDouble() : 0.0,
+          categoryId: productData['categoryId'],
+        );
+      } else {
+        throw Exception('Failed to fetch product details');
+      }
+    } catch (e) {
+      print('Error fetching product details: $e');
+      rethrow;
+    }
+  }
+
 }
