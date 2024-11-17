@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lock_item/services/user_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -8,14 +9,48 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  final UserService _userService = UserService();
 
   void _togglePasswordVisibility() {
     setState(() {
       _obscurePassword = !_obscurePassword;
     });
+  }
+
+  Future<void> _login() async {
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (username.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
+    }
+
+    try {
+      final userData = await _userService.login(username, password);
+      if (userData != null) {
+        // Inicio de sesión exitoso
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Login successful!')),
+        );
+
+        // Navegar a HomeScreen
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid username or password')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
   }
 
   @override
@@ -39,15 +74,19 @@ class _LoginScreenState extends State<LoginScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
+
+            // Campo Username
             TextField(
-              controller: _emailController,
+              controller: _usernameController,
               decoration: const InputDecoration(
-                labelText: 'Email',
-                hintText: 'Enter your email address',
+                labelText: 'Username',
+                hintText: 'Enter your username',
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
+
+            // Campo Password
             TextField(
               controller: _passwordController,
               obscureText: _obscurePassword,
@@ -63,32 +102,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () {
-                  // TODO: Implement reset password navigation
-                },
-                child: const Text('Reset your password'),
-              ),
-            ),
             const SizedBox(height: 24),
+
+            // Botón Login
             ElevatedButton(
-              onPressed: () {
-                // Aquí puedes agregar la lógica de validación antes de navegar
-                if (_emailController.text.isNotEmpty && _passwordController.text.isNotEmpty) {
-                  Navigator.pushReplacementNamed(context, '/home');
-                } else {
-                  // Muestra un mensaje de error
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Please fill in all fields")),
-                  );
-                }
-              },
+              onPressed: _login,
               child: const Text('Login'),
             ),
             const SizedBox(height: 16),
+
+            // Opción para registrarse si no tiene cuenta
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
