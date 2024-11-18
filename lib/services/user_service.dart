@@ -51,11 +51,24 @@ class UserService {
   // Decodificar el token almacenado
   Future<Map<String, dynamic>?> getDecodedToken() async {
     final token = await getToken();
-    if (token != null) {
-      return JwtDecoder.decode(token);
+    if (token == null) {
+      _logger.e('No token found in secure storage');
+      return null;
     }
-    return null;
+
+    try {
+      final decodedToken = JwtDecoder.decode(token);
+      if (!decodedToken.containsKey('sub')) {
+        _logger.e('Decoded token does not contain "sub" key: $decodedToken');
+        return null;
+      }
+      return decodedToken;
+    } catch (e) {
+      _logger.e('Error decoding token: $e');
+      return null;
+    }
   }
+
 
   // Cerrar sesión (eliminar token)
   Future<void> logout() async {
@@ -83,6 +96,37 @@ class UserService {
     } catch (e) {
       _logger.e('Error registering user: $e');
       return false;
+    }
+  }
+
+  // Obtencion de datos del usuario activo
+  Future<User?> getUserById(int id) async {
+    final url = Uri.parse('$_baseUrl/$id'); // Endpoint con el ID del usuario
+    try {
+      final token = await getToken(); // Obtener el token almacenado
+      if (token == null) {
+        throw Exception("No token found");
+      }
+
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        _logger.i('User data fetched: $data'); // Log para depuración
+        return User.fromJson(data); // Convertir a modelo User
+      } else {
+        _logger.e('Error fetching user data: ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      _logger.e('Error fetching user data: $e');
+      return null;
     }
   }
 }

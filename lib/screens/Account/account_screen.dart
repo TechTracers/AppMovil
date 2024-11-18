@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:lock_item/services/user_service.dart';
+import 'package:lock_item/models/user.dart';
+import 'package:logger/logger.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -8,15 +11,62 @@ class AccountScreen extends StatefulWidget {
 }
 
 class _AccountScreenState extends State<AccountScreen> {
-  final TextEditingController fullNameController =
-  TextEditingController(text: "");
-  final TextEditingController emailController =
-  TextEditingController(text: "");
-  final TextEditingController phoneNumberController =
-  TextEditingController(text: "");
-  final TextEditingController dateOfBirthController =
-  TextEditingController(text: "");
-  String gender = "Male";
+  User? user;
+  final UserService _userService = UserService();
+  final Logger _logger = Logger();
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final decodedToken = await _userService.getDecodedToken();
+      if (decodedToken != null) {
+        final userId = int.parse(decodedToken['sub']);
+        _logger.i('User ID from token: $userId');
+        final fetchedUser = await _userService.getUserById(userId);
+
+        if (fetchedUser != null) {
+          setState(() {
+            user = fetchedUser;
+            isLoading = false;
+          });
+          _logger.i('User data loaded successfully: ${fetchedUser.toJson()}');
+        } else {
+          _logger.e('Failed to fetch user data.');
+        }
+      } else {
+        _logger.e('Decoded token is null.');
+      }
+    } catch (e) {
+      _logger.e('Error loading user data: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  Widget _buildUserInfo(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 14, color: Colors.grey, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        const Divider(height: 32, thickness: 1),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,137 +76,28 @@ class _AccountScreenState extends State<AccountScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.red),
-            onPressed: () {
-              // Acción para cerrar sesión
+            onPressed: () async {
+              await _userService.logout();
+              Navigator.pushReplacementNamed(context, '/login');
             },
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Full Name
-            const Text(
-              'Full Name',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: fullNameController,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Email Address
-            const Text(
-              'Email Address',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: emailController,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Date of Birth
-            const Text(
-              'Date of Birth',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: dateOfBirthController,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.calendar_today),
-                  onPressed: () {
-                    // Acción para seleccionar la fecha
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Gender
-            const Text(
-              'Gender',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
-              value: gender,
-              onChanged: (newValue) {
-                setState(() {
-                  gender = newValue!;
-                });
-              },
-              items: ['Male', 'Female', 'Other']
-                  .map((gender) => DropdownMenuItem(
-                value: gender,
-                child: Text(gender),
-              ))
-                  .toList(),
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Phone Number
-            const Text(
-              'Phone Number',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: phoneNumberController,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Edit Button
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  // Acción para guardar los cambios
-                },
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 40.0,
-                    vertical: 15.0,
-                  ),
-                  backgroundColor: Colors.black,
-                ),
-                child: const Text(
-                  'Edit',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
-              ),
-            ),
+            _buildUserInfo('Full Name', '${user?.name ?? 'N/A'} ${user?.lastname ?? 'N/A'}'),
+            _buildUserInfo('Username', user?.username ?? 'N/A'),
+            _buildUserInfo('Email Address', user?.email ?? 'N/A'),
+            _buildUserInfo('Phone Number', user?.phone ?? 'N/A'),
           ],
         ),
       ),
+
     );
   }
 }

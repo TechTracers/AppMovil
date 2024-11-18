@@ -1,46 +1,43 @@
 class User {
   final int id;
   final String username;
-  final String password;
   final String name;
   final String lastname;
   final String email;
   final String phone;
-  final String role;
+  final String? password; // Password ahora es opcional
 
   User({
     required this.id,
     required this.username,
-    required this.password,
     required this.name,
     required this.lastname,
     required this.email,
     required this.phone,
-    this.role = "NORMAL", // Valor predeterminado para el rol
+    this.password, // Permite que sea opcional
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['id'],
-      username: json['username'],
-      password: json['password'],
-      name: json['name'],
-      lastname: json['lastname'],
-      email: json['email'],
-      phone: json['phone'],
-      role: json['role'] ?? "NORMAL",
+      username: json['username'] ?? 'N/A',
+      name: json['name'] ?? 'N/A',
+      lastname: json['lastname'] ?? 'N/A',
+      email: json['email'] ?? 'N/A',
+      phone: json['phone'] ?? 'N/A',
+      password: json['password'], // Si el JSON contiene el password
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'username': username,
-      'password': password,
       'name': name,
       'lastname': lastname,
       'email': email,
       'phone': phone,
-      'role': role,
+      if (password != null) 'password': password, // Solo incluir si no es null
     };
   }
 }
