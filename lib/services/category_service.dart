@@ -1,33 +1,44 @@
 import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
 
 class CategoryService {
-  // URL del endpoint para obtener las categorías
-  static const String categoriesUrl = 'https://my-json-server.typicode.com/Ednoru/arquidb/categories';
+  //static const String categoriesUrl = 'https://my-json-server.typicode.com/Ednoru/arquidb/categories';
+  static const String _categoriesUrl =
+      'https://lockitem-abaje5g7dagcbsew.canadacentral-01.azurewebsites.net/api/v1/product-categories';
 
-  // Método para obtener las categorías desde la API
+
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  final Logger _logger = Logger();
+
   Future<List<Map<String, dynamic>>> fetchCategories() async {
+    final token = await _secureStorage.read(key: 'authToken');
+    if (token == null) throw Exception('User token is missing.');
+
     try {
-      // Realiza la solicitud HTTP GET
-      final response = await http.get(Uri.parse(categoriesUrl));
+      final response = await http.get(
+        Uri.parse(_categoriesUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
 
       if (response.statusCode == 200) {
-        // Decodifica la respuesta JSON
-        List<dynamic> categoriesData = json.decode(response.body);
-
-        // Convierte los datos a una lista de Map<String, dynamic>
-        return categoriesData.map((category) {
+        List<dynamic> data = json.decode(response.body);
+        return data.map((category) {
           return {
-            'id': category['id'],
-            'name': category['name'],
+            'id': category['id'] ?? 0,
+            'name': category['name'] ?? 'Unknown',
           };
         }).toList();
       } else {
-        throw Exception('Failed to load categories');
+        _logger.e('Failed to fetch categories. Status: ${response.statusCode}');
+        throw Exception('Failed to fetch categories.');
       }
     } catch (e) {
-      // Manejo de errores
-      print('Error fetching categories: $e');
+      _logger.e('Error fetching categories: $e');
       rethrow;
     }
   }

@@ -1,87 +1,72 @@
 import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
 import '../models/product.dart';
 
 class ProductService {
-  static const String productsUrl = 'https://my-json-server.typicode.com/Ednoru/arquidb/products';
-  static const String storeProductsUrl = 'https://my-json-server.typicode.com/Ednoru/arquidb/storeProducts';
+  // static const String productsUrl = 'https://my-json-server.typicode.com/Ednoru/arquidb/products';
+  // static const String storeProductsUrl = 'https://my-json-server.typicode.com/Ednoru/arquidb/storeProducts';
+  static const String _storeProductsUrl =
+      'https://lockitem-abaje5g7dagcbsew.canadacentral-01.azurewebsites.net/api/v1/stores';
+  static const String _productsUrl =
+      'https://lockitem-abaje5g7dagcbsew.canadacentral-01.azurewebsites.net/api/v1/products';
+
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  final Logger _logger = Logger();
 
   Future<List<Product>> fetchStoreProducts(int storeId) async {
+    final token = await _secureStorage.read(key: 'authToken');
+    if (token == null) throw Exception('User token is missing.');
+
     try {
-      // Obtén los datos de ambos endpoints
-      final productsResponse = await http.get(Uri.parse(productsUrl));
-      final storeProductsResponse = await http.get(Uri.parse(storeProductsUrl));
+      final url = Uri.parse('$_storeProductsUrl/$storeId/products');
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
 
-      // Verifica que ambas respuestas sean exitosas
-      if (productsResponse.statusCode == 200 && storeProductsResponse.statusCode == 200) {
-        // Decodifica los datos
-        List<dynamic> productsData = json.decode(productsResponse.body);
-        List<dynamic> storeProductsData = json.decode(storeProductsResponse.body);
-
-        // Lista para almacenar los productos filtrados
-        List<Product> filteredProducts = [];
-
-        // Filtra los productos por `storeId`
-        for (var storeProduct in storeProductsData) {
-          if (storeProduct['storeId'] == storeId) {
-            // Busca el producto correspondiente
-            final product = productsData.firstWhere(
-                  (p) => p['id'] == storeProduct['productId'],
-              orElse: () => null,
-            );
-
-            if (product != null) {
-              // Agrega el producto filtrado a la lista
-              filteredProducts.add(Product(
-                id: product['id'],
-                name: product['name'],
-                description: product['description'],
-                imageUrl: product['imageUrl'],
-                price: storeProduct['price'].toDouble(),
-                categoryId: product['categoryId'], // Aquí pasamos el categoryId desde el JSON
-              ));
-            }
-          }
-        }
-
-        return filteredProducts;
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((json) => Product.fromJson(json)).toList();
       } else {
-        throw Exception('Failed to load data from one or more endpoints');
+        _logger.e(
+            'Failed to fetch store products. Status: ${response.statusCode}');
+        throw Exception('Failed to fetch store products.');
       }
     } catch (e) {
-      // Manejo de errores
-      print('Error fetching store products: $e');
+      _logger.e('Error fetching store products: $e');
       rethrow;
     }
   }
 
+
   Future<Product> fetchProductById(int productId) async {
+    final token = await _secureStorage.read(key: 'authToken');
+    if (token == null) throw Exception('User token is missing.');
+
     try {
-      final productResponse = await http.get(Uri.parse('$productsUrl/$productId'));
-      final storeProductResponse = await http.get(Uri.parse(storeProductsUrl));
+      final url = Uri.parse('$_productsUrl/$productId');
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
 
-      if (productResponse.statusCode == 200 && storeProductResponse.statusCode == 200) {
-        final productData = json.decode(productResponse.body);
-        final storeProducts = json.decode(storeProductResponse.body);
-
-        final storeProduct = storeProducts.firstWhere(
-              (sp) => sp['productId'] == productId,
-          orElse: () => null,
-        );
-
-        return Product(
-          id: productData['id'],
-          name: productData['name'],
-          description: productData['description'],
-          imageUrl: productData['imageUrl'],
-          price: storeProduct != null ? storeProduct['price'].toDouble() : 0.0,
-          categoryId: productData['categoryId'],
-        );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return Product.fromJson(data); // Se utiliza el JSON directamente
       } else {
-        throw Exception('Failed to fetch product details');
+        _logger.e('Failed to fetch product. Status: ${response.statusCode}');
+        throw Exception('Failed to fetch product details.');
       }
     } catch (e) {
-      print('Error fetching product details: $e');
+      _logger.e('Error fetching product details: $e');
       rethrow;
     }
   }

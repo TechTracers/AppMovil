@@ -3,8 +3,8 @@ import 'package:lock_item/screens/home/product_details_screen.dart';
 import 'package:lock_item/services/product_service.dart';
 
 import '../../models/product.dart';
-import '../../widgets/bottom_nav_bar.dart';
 import '../../services/category_service.dart';
+import 'package:logger/logger.dart';
 
 class CatalogScreen extends StatefulWidget {
   const CatalogScreen({super.key, required this.storeId, required this.storeName});
@@ -19,27 +19,50 @@ class CatalogScreen extends StatefulWidget {
 class _CatalogScreenState extends State<CatalogScreen> {
   final ProductService productService = ProductService();
   final CategoryService categoryService = CategoryService();
-  late Future<List<Product>> products;
+  final Logger _logger = Logger();
   List<Product> allProducts = [];
   List<Product> filteredProducts = [];
+  List<Map<String, dynamic>> categories = [];
   int? selectedCategory; // Variable para la categoría seleccionada
-  int _currentIndex = 0; // Control del índice del BottomNavBar
+  bool isLoadingProducts = true;
+  bool isLoadingCategories = true;
 
   @override
   void initState() {
     super.initState();
-    products = productService.fetchStoreProducts(widget.storeId);
-    products.then((data) {
-      setState(() {
-        allProducts = data;
-        filteredProducts = data; // Inicialmente muestra todos los productos
-      });
-    });
+    fetchStoreProducts();
+    fetchCategories();
   }
 
-  // Método para obtener categorías desde la API
-  Future<List<Map<String, dynamic>>> fetchCategories() async {
-    return await categoryService.fetchCategories();
+  Future<void> fetchStoreProducts() async {
+    try {
+      final products = await productService.fetchStoreProducts(widget.storeId);
+      setState(() {
+        allProducts = products;
+        filteredProducts = products; // Inicialmente muestra todos los productos
+        isLoadingProducts = false;
+      });
+    } catch (e) {
+      _logger.e('Error fetching store products: $e');
+      setState(() {
+        isLoadingProducts = false;
+      });
+    }
+  }
+
+  Future<void> fetchCategories() async {
+    try {
+      final categoryData = await categoryService.fetchCategories();
+      setState(() {
+        categories = categoryData;
+        isLoadingCategories = false;
+      });
+    } catch (e) {
+      _logger.e('Error fetching categories: $e');
+      setState(() {
+        isLoadingCategories = false;
+      });
+    }
   }
 
   void filterByCategory(int? categoryId) {
@@ -49,7 +72,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
         filteredProducts = allProducts; // Mostrar todos los productos si no hay categoría seleccionada
       } else {
         filteredProducts = allProducts
-            .where((product) => product.categoryId == categoryId)
+            .where((product) => product.categoryId == categories.firstWhere((c) => c['id'] == categoryId)['name'])
             .toList();
       }
     });
@@ -64,101 +87,75 @@ class _CatalogScreenState extends State<CatalogScreen> {
       body: Column(
         children: [
           // Botones de filtrado de categorías
-          FutureBuilder<List<Map<String, dynamic>>>(
-            future: fetchCategories(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const SizedBox(
-                  height: 50,
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              } else if (snapshot.hasError) {
-                return const SizedBox(
-                  height: 50,
-                  child: Center(child: Text('Error al cargar categorías')),
-                );
-              } else {
-                final categories = snapshot.data!;
-                return Container(
-                  height: 50,
-                  margin: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: categories.length + 1, // +1 para el botón "Todos"
-                    itemBuilder: (context, index) {
-                      if (index == 0) {
-                        return CategoryButton(
-                          label: 'All',
-                          isSelected: selectedCategory == null,
-                          onTap: () => filterByCategory(null),
-                        );
-                      } else {
-                        final category = categories[index - 1];
-                        return CategoryButton(
-                          label: category['name'],
-                          isSelected: selectedCategory == category['id'],
-                          onTap: () => filterByCategory(category['id']),
-                        );
-                      }
-                    },
-                  ),
-                );
-              }
-            },
-          ),
-          // Lista de productos filtrados
-          Expanded(
-            child: FutureBuilder<List<Product>>(
-              future: products,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                } else if (filteredProducts.isEmpty) {
-                  return const Center(child: Text('No products available.'));
+          isLoadingCategories
+              ? const SizedBox(
+            height: 50,
+            child: Center(child: CircularProgressIndicator()),
+          )
+              : categories.isEmpty
+              ? const SizedBox(
+            height: 50,
+            child: Center(child: Text('No categories available')),
+          )
+              : Container(
+            height: 50,
+            margin: const EdgeInsets.symmetric(vertical: 8.0),
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: categories.length + 1, // +1 para el botón "All"
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  return CategoryButton(
+                    label: 'All',
+                    isSelected: selectedCategory == null,
+                    onTap: () => filterByCategory(null),
+                  );
                 } else {
-                  return GridView.builder(
-                    padding: const EdgeInsets.all(10),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      childAspectRatio: 0.75,
-                    ),
-                    itemCount: filteredProducts.length,
-                    itemBuilder: (context, index) {
-                      final product = filteredProducts[index];
-                      return GestureDetector(
-                        onTap: () {
-                          // Navegar a los detalles del producto
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ProductDetailScreen(productId: product.id),
-                            ),
-                          );
-                        },
-                        child: ProductCard(product: product),
-                      );
-                    },
+                  final category = categories[index - 1];
+                  return CategoryButton(
+                    label: category['name'],
+                    isSelected: selectedCategory == category['id'],
+                    onTap: () => filterByCategory(category['id']),
                   );
                 }
               },
             ),
           ),
+          // Lista de productos filtrados
+          Expanded(
+            child: isLoadingProducts
+                ? const Center(child: CircularProgressIndicator())
+                : filteredProducts.isEmpty
+                ? const Center(child: Text('No products available.'))
+                : GridView.builder(
+              padding: const EdgeInsets.all(10),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                childAspectRatio: 0.75,
+              ),
+              itemCount: filteredProducts.length,
+              itemBuilder: (context, index) {
+                final product = filteredProducts[index];
+                return GestureDetector(
+                  onTap: () {
+                    // Navegar a los detalles del producto
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            ProductDetailScreen(productId: product.id),
+                      ),
+                    );
+                  },
+                  child: ProductCard(product: product),
+                );
+              },
+            ),
+          ),
         ],
       ),
-      /**bottomNavigationBar: BottomNavBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-          // Implementar navegación en el BottomNavBar
-        },
-      ),**/
     );
   }
 }
@@ -203,9 +200,9 @@ class ProductCard extends StatelessWidget {
   final Product product;
 
   const ProductCard({
-    Key? key,
+    super.key,
     required this.product,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

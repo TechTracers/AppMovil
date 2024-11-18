@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lock_item/widgets/bottom_nav_bar.dart';
 import 'package:lock_item/services/store_service.dart';
 import 'package:lock_item/models/store.dart';
 import 'package:lock_item/screens/home/catalog_screen.dart';
@@ -12,7 +11,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
   List<Store> stores = [];
   bool isLoading = true;
   final StoreService _storeService = StoreService();
@@ -46,6 +44,8 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
+          : stores.isEmpty
+          ? const Center(child: Text('No stores available'))
           : GridView.builder(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
@@ -58,13 +58,12 @@ class _HomeScreenState extends State<HomeScreen> {
           final store = stores[index];
           return GestureDetector(
             onTap: () {
-              // Navegar a la pantalla del catálogo al seleccionar una tienda
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => CatalogScreen(
-                    storeId: store.id, // Pasa el ID de la tienda
-                    storeName: store.name, // Pasa el nombre de la tienda
+                    storeId: store.id,
+                    storeName: store.name,
                   ),
                 ),
               );
@@ -73,14 +72,6 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         },
       ),
-      /***bottomNavigationBar: BottomNavBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-      ),**/
     );
   }
 

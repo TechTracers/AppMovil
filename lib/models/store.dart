@@ -13,7 +13,7 @@ class Store {
     return Store(
       id: json['id'],
       name: json['name'],
-      imageUrl: json['imageUrl'],
+      imageUrl: json['imageUrl'] ?? 'https://via.placeholder.com/150', // Placeholder para imágenes,
     );
   }
 }

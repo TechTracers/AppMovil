@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../models/product.dart';
 import '../../services/product_service.dart';
-import '../../widgets/bottom_nav_bar.dart';
 
 class ProductDetailScreen extends StatefulWidget {
-  final int productId;
+  const ProductDetailScreen({super.key, required this.productId});
 
-  const ProductDetailScreen({
-    Key? key,
-    required this.productId,
-  }) : super(key: key);
+  final int productId;
 
   @override
   _ProductDetailScreenState createState() => _ProductDetailScreenState();
@@ -18,7 +15,6 @@ class ProductDetailScreen extends StatefulWidget {
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   final ProductService productService = ProductService();
   late Future<Product> productDetail;
-  int _currentIndex = 0; // Control del índice del BottomNavBar
 
   @override
   void initState() {
@@ -50,10 +46,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 children: [
                   // Imagen del producto
                   Center(
-                    child: Image.network(
-                      product.imageUrl,
+                    child: CachedNetworkImage(
+                      imageUrl: product.imageUrl.isNotEmpty
+                          ? product.imageUrl
+                          : '', // Si la URL no está vacía
                       height: 200,
                       fit: BoxFit.cover,
+                      placeholder: (context, url) =>
+                      const CircularProgressIndicator(),
+                      errorWidget: (context, url, error) => const Icon(
+                        Icons.broken_image,
+                        size: 100,
+                        color: Colors.grey,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -66,69 +71,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  // Rating y reseñas
-                  Row(
-                    children: [
-                      const Icon(Icons.star, color: Colors.amber, size: 20),
-                      const SizedBox(width: 5),
-                      Text(
-                        '4.0/5 (45 reviews)', // Hardcoded; reemplazar si tienes datos reales
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
                   // Descripción del producto
                   Text(
                     product.description,
                     style: const TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 20),
-                  // Opciones de tamaño
-                  const Text(
-                    'Choose size',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: ['S', 'M', 'L']
-                        .map(
-                          (size) => Container(
-                        margin: const EdgeInsets.only(right: 10),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(size),
-                      ),
-                    )
-                        .toList(),
-                  ),
-                  const SizedBox(height: 20),
-                  // Precio del producto
-                  const Text(
-                    'Price',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    '\$${product.price}',
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green,
-                    ),
                   ),
                   const SizedBox(height: 20),
                   // Botón "Locate"
@@ -156,14 +102,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           }
         },
       ),
-      /**bottomNavigationBar: BottomNavBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-      ),**/
     );
   }
 }
