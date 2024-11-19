@@ -38,10 +38,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             Center(
               child: CachedNetworkImage(
                 imageUrl: product.imageUrl.isNotEmpty ? product.imageUrl : '',
-                height: 200,
+                height: 500,
                 fit: BoxFit.cover,
-                placeholder: (context, url) =>
-                    const CircularProgressIndicator(),
                 errorWidget: (context, url, error) =>
                     const Icon(Icons.broken_image, size: 100),
               ),
