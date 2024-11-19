@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lock_item/services/user_service.dart';
 import 'package:lock_item/models/user.dart';
+import 'package:lock_item/shared/handlers/jwt_handler.dart';
 import 'package:logger/logger.dart';
 
 class AccountScreen extends StatefulWidget {
@@ -24,24 +25,21 @@ class _AccountScreenState extends State<AccountScreen> {
 
   Future<void> _loadUserData() async {
     try {
-      final decodedToken = await _userService.getDecodedToken();
-      if (decodedToken != null) {
-        final userId = int.parse(decodedToken['sub']);
-        _logger.i('User ID from token: $userId');
-        final fetchedUser = await _userService.getUserById(userId);
+      final handler = await JwtHandler.fromStorage();
+      final userId = handler.getUserId();
+      _logger.i('User ID from token: $userId');
 
-        if (fetchedUser != null) {
-          setState(() {
-            user = fetchedUser;
-            isLoading = false;
-          });
-          _logger.i('User data loaded successfully: ${fetchedUser.toJson()}');
-        } else {
-          _logger.e('Failed to fetch user data.');
-        }
-      } else {
-        _logger.e('Decoded token is null.');
+      final fetchedUser = await _userService.getUserById(userId);
+      if (fetchedUser == null) {
+        _logger.e('Failed to fetch user data.');
+        return;
       }
+
+      setState(() {
+        user = fetchedUser;
+        isLoading = false;
+      });
+      _logger.i('User data loaded successfully: ${fetchedUser.toJson()}');
     } catch (e) {
       _logger.e('Error loading user data: $e');
       setState(() {
@@ -56,7 +54,8 @@ class _AccountScreenState extends State<AccountScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 14, color: Colors.grey, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+              fontSize: 14, color: Colors.grey, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 4),
         Text(
@@ -86,18 +85,19 @@ class _AccountScreenState extends State<AccountScreen> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildUserInfo('Full Name', '${user?.name ?? 'N/A'} ${user?.lastname ?? 'N/A'}'),
-            _buildUserInfo('Username', user?.username ?? 'N/A'),
-            _buildUserInfo('Email Address', user?.email ?? 'N/A'),
-            _buildUserInfo('Phone Number', user?.phone ?? 'N/A'),
-          ],
-        ),
-      ),
-
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildUserInfo('Full Name',
+                      '${user?.name ?? 'N/A'} ${user?.lastname ?? 'N/A'}'),
+                  _buildUserInfo('Username', user?.username ?? 'N/A'),
+                  _buildUserInfo('Email Address', user?.email ?? 'N/A'),
+                  _buildUserInfo('Phone Number', user?.phone ?? 'N/A'),
+                ],
+              ),
+            ),
     );
   }
 }

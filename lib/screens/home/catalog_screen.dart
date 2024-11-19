@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lock_item/screens/home/product_details_screen.dart';
 import 'package:lock_item/services/product_service.dart';
+import 'package:lock_item/services/store_service.dart';
 
 import '../../models/product.dart';
 import '../../services/category_service.dart';
@@ -19,6 +20,7 @@ class CatalogScreen extends StatefulWidget {
 class _CatalogScreenState extends State<CatalogScreen> {
   final ProductService productService = ProductService();
   final CategoryService categoryService = CategoryService();
+  final StoreService storeService = StoreService();
   final Logger _logger = Logger();
   List<Product> allProducts = [];
   List<Product> filteredProducts = [];
@@ -36,7 +38,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
   Future<void> fetchStoreProducts() async {
     try {
-      final products = await productService.fetchStoreProducts(widget.storeId);
+      final products = await storeService.fetchProducts(widget.storeId);
       setState(() {
         allProducts = products;
         filteredProducts = products; // Inicialmente muestra todos los productos
