@@ -2,35 +2,41 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:lock_item/models/location.dart';
+import '../../services/firebase_service.dart';
 
 class LocateProductScreen extends StatefulWidget {
   const LocateProductScreen({super.key, required this.iotUID});
 
-  final String iotUID; // Identificador IoT del producto
+  final String iotUID;
 
   @override
   State<LocateProductScreen> createState() => _LocateProductScreenState();
 }
 
 class _LocateProductScreenState extends State<LocateProductScreen> {
-  final DatabaseReference dbRef = FirebaseDatabase.instance.ref();
-  Map<String, dynamic>? latestLocation;
+  final FirebaseService firebaseService =
+  FirebaseService(FirebaseDatabase.instance.ref());
+  List<Location> locationHistory = [];
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    fetchLatestLocation();
+    listenToLocations();
   }
 
-  void fetchLatestLocation() {
-    dbRef.child(widget.iotUID).limitToLast(1).onValue.listen((event) {
-      final data = event.snapshot.value as Map?;
-      if (data != null) {
-        final latestKey = data.keys.last;
-        setState(() {
-          latestLocation = data[latestKey];
-        });
-      }
+  void listenToLocations() {
+    firebaseService.getLocations(widget.iotUID).listen((locations) {
+      setState(() {
+        locationHistory = locations;
+        isLoading = false; // Detener el indicador de carga
+      });
+    }, onError: (error) {
+      setState(() {
+        isLoading = false; // Detener el indicador de carga en caso de error
+      });
+      print("Error al escuchar datos de Firebase: $error");
     });
   }
 
@@ -40,13 +46,20 @@ class _LocateProductScreenState extends State<LocateProductScreen> {
       appBar: AppBar(
         title: const Text('Localizar Producto'),
       ),
-      body: latestLocation == null
+      body: isLoading
           ? const Center(child: CircularProgressIndicator())
+          : locationHistory.isEmpty
+          ? const Center(
+        child: Text(
+          'No se encontraron ubicaciones válidas.',
+          style: TextStyle(fontSize: 16),
+        ),
+      )
           : FlutterMap(
         options: MapOptions(
           initialCenter: LatLng(
-            latestLocation!['latitude'],
-            latestLocation!['longitude'],
+            locationHistory.last.latitude,
+            locationHistory.last.longitude,
           ),
           initialZoom: 15.0,
         ),
@@ -57,42 +70,18 @@ class _LocateProductScreenState extends State<LocateProductScreen> {
             subdomains: ['a', 'b', 'c'],
           ),
           MarkerLayer(
-            markers: [
-              Marker(
-                point: LatLng(
-                  latestLocation!['latitude'],
-                  latestLocation!['longitude'],
-                ),
+            markers: locationHistory.map((location) {
+              return Marker(
+                point: LatLng(location.latitude, location.longitude),
                 width: 80,
                 height: 80,
-                child: GestureDetector(
-                  onTap: () {
-                    // Mostrar información adicional al hacer clic en el marcador
-                    showDialog(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: const Text("Información del Producto"),
-                        content: Text(
-                            "Coordenadas: (${latestLocation!['latitude']}, ${latestLocation!['longitude']})"),
-                        actions: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(ctx).pop();
-                            },
-                            child: const Text("Cerrar"),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                  child: const Icon(
-                    Icons.location_pin,
-                    color: Colors.red,
-                    size: 40.0,
-                  ),
+                child: const Icon(
+                  Icons.location_pin,
+                  color: Colors.red,
+                  size: 40.0,
                 ),
-              ),
-            ],
+              );
+            }).toList(),
           ),
         ],
       ),
