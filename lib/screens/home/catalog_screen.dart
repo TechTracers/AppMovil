@@ -37,48 +37,56 @@ class _CatalogScreenState extends State<CatalogScreen> {
   }
 
   Future<void> fetchStoreProducts() async {
-    try {
-      final products = await storeService.fetchProducts(widget.storeId);
-      setState(() {
-        allProducts = products;
-        filteredProducts = products; // Inicialmente muestra todos los productos
-        isLoadingProducts = false;
-      });
-    } catch (e) {
-      _logger.e('Error fetching store products: $e');
-      setState(() {
-        isLoadingProducts = false;
-      });
-    }
-  }
-
-  Future<void> fetchCategories() async {
-    try {
-      final categoryData = await categoryService.fetchCategories();
-      setState(() {
-        categories = categoryData;
-        isLoadingCategories = false;
-      });
-    } catch (e) {
-      _logger.e('Error fetching categories: $e');
-      setState(() {
-        isLoadingCategories = false;
-      });
-    }
-  }
-
-  void filterByCategory(int? categoryId) {
+  try {
+    final products = await storeService.fetchProducts(widget.storeId);
+    print('Productos recibidos: $products'); // Debug
     setState(() {
-      selectedCategory = categoryId;
-      if (categoryId == null) {
-        filteredProducts = allProducts; // Mostrar todos los productos si no hay categoría seleccionada
-      } else {
-        filteredProducts = allProducts
-            .where((product) => product.categoryId == categories.firstWhere((c) => c['id'] == categoryId)['name'])
-            .toList();
-      }
+      allProducts = products;
+      filteredProducts = products; // Inicialmente muestra todos los productos
+      isLoadingProducts = false;
+    });
+  } catch (e) {
+    print('Error al obtener productos: $e'); // Debug
+    setState(() {
+      isLoadingProducts = false;
     });
   }
+}
+
+
+  Future<void> fetchCategories() async {
+  try {
+    final categoryData = await categoryService.fetchCategories();
+    print('Categorías recibidas: $categoryData'); // Debug
+    setState(() {
+      categories = categoryData;
+      isLoadingCategories = false;
+    });
+  } catch (e) {
+    print('Error al obtener categorías: $e'); // Debug
+    setState(() {
+      isLoadingCategories = false;
+    });
+  }
+}
+
+
+  void filterByCategory(int? categoryId) {
+  print('Filtrando por categoría: $categoryId'); // Debug
+  setState(() {
+    selectedCategory = categoryId;
+    if (categoryId == null) {
+      filteredProducts = allProducts; // Mostrar todos los productos si no hay categoría seleccionada
+      print('Mostrando todos los productos: $filteredProducts'); // Debug
+    } else {
+      filteredProducts = allProducts
+          .where((product) => product.categoryId == categoryId)
+          .toList();
+      print('Productos filtrados: $filteredProducts'); // Debug
+    }
+  });
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +100,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
           isLoadingCategories
               ? const SizedBox(
             height: 50,
-            child: Center(child: CircularProgressIndicator()),
+            //child: Center(child: CircularProgressIndicator()),
           )
               : categories.isEmpty
               ? const SizedBox(
@@ -140,6 +148,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
               itemCount: filteredProducts.length,
               itemBuilder: (context, index) {
                 final product = filteredProducts[index];
+                print('Mostrando producto en la lista: ${product.name}'); // Debug
                 return GestureDetector(
                   onTap: () {
                     // Navegar a los detalles del producto
@@ -180,7 +189,7 @@ class CategoryButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8.0),
+        margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 5.0),
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
         decoration: BoxDecoration(
           color: isSelected ? Colors.black : Colors.grey[300],

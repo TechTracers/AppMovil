@@ -4,7 +4,7 @@ class Product {
   final String description;
   final String imageUrl;
   final double price;
-  final String categoryId;
+  final int categoryId; // Cambiar de String a int
   final String iotUID;
 
   Product({
@@ -27,9 +27,8 @@ class Product {
       description: productData['description'] ?? 'No description available',
       imageUrl: productData['imageUrl'] ?? '',
       price: json['price'] != null ? json['price'].toDouble() : 0.0,
-      categoryId: categoryData['id']?.toString() ?? 'Unknown',
+      categoryId: categoryData['id'] ?? 0, // Asegúrate de obtener el id como int
       iotUID: json['iotUID'] ?? '',
     );
   }
 }
-
