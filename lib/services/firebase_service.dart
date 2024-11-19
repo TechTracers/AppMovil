@@ -6,27 +6,19 @@ class FirebaseService {
 
   FirebaseService(this.dbRef);
 
-  Stream<List<Location>> getLocations(String iotUID) {
-    return dbRef
-        .child('positions')
-        .child(iotUID)
-        .onChildAdded
-        .map((event) {
+  Stream<Location?> getLocations(String iotUID) {
+    return dbRef.child('positions').child(iotUID).onChildAdded.map((event) {
       final data = event.snapshot.value as Map?;
       if (data == null) {
         print("El nodo para $iotUID está vacío.");
-        return [];
+        return null;
       }
 
       try {
-        // Convertir cada entrada en un LocationModel
-        final locations = [Location.fromMap(data)];
-
-        print("Se encontraron ${locations.length} ubicaciones para $iotUID.");
-        return locations;
+        return Location.fromMap(data);
       } catch (e) {
         print("Error al procesar datos para $iotUID: $e");
-        return [];
+        return null;
       }
     });
   }
