@@ -19,6 +19,7 @@ class LocateProductScreen extends StatefulWidget {
 class _LocateProductScreenState extends State<LocateProductScreen> {
   final FirebaseService firebaseService =
       FirebaseService(FirebaseDatabase.instance.ref());
+  Stream<Position>? _positionStream;
   Location? productLocation;
   Position? position;
 
@@ -42,6 +43,22 @@ class _LocateProductScreenState extends State<LocateProductScreen> {
       this.position = position;
       _isPositionLoaded = true;
     });
+
+    // Start listening to location changes
+    _positionStream = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 1, // Update only if moved by 10 meters
+      ),
+    );
+
+    _positionStream?.listen((Position position) {
+      setState(() {
+        this.position = position;
+        _centerMap();
+        print("Position: Update position");
+      });
+    });
   }
 
   void listenToLocations() {
@@ -56,11 +73,14 @@ class _LocateProductScreenState extends State<LocateProductScreen> {
     });
   }
 
-  _changeZoom(int value) {
-    final zoom = (_currentZoom + value).clamp(1.0, 21.0);
-    if (zoom == _currentZoom) return;
+  _changePosition(LatLng position, double zoom) {
+    zoom = zoom.clamp(1.0, 21.0);
     _currentZoom = zoom;
-    _mapController.move(_mapController.camera.center, _currentZoom);
+    _mapController.move(position, _currentZoom);
+  }
+
+  _changeZoom(int value) {
+    _changePosition(_mapController.camera.center, _currentZoom + value);
   }
 
   void _centerMap() {
@@ -156,6 +176,28 @@ class _LocateProductScreenState extends State<LocateProductScreen> {
                         child: const Icon(Icons.center_focus_strong,
                             color: Colors.black),
                       )
+                    ],
+                  ),
+                ),
+                Positioned(
+                  bottom: 20,
+                  left: 10,
+                  child: Column(
+                    children: [
+                      FloatingActionButton(
+                          onPressed: () => _changePosition(
+                              LatLng(productLocation!.latitude,
+                                  productLocation!.longitude),
+                              12),
+                        child: const Icon(Icons.circle_outlined, color: Colors.red,),
+                      ),
+                      const SizedBox(height: 5,),
+                      FloatingActionButton(
+                          onPressed: () => _changePosition(
+                              LatLng(position!.latitude, position!.longitude),
+                              12),
+                        child: const Icon(Icons.circle_outlined, color: Colors.green,),
+                      ),
                     ],
                   ),
                 )
