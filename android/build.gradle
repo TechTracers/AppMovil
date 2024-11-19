@@ -1,3 +1,14 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.3.2' // Verifica que sea compatible con tu Gradle Wrapper
+        classpath 'com.google.gms:google-services:4.4.2' // Plugin de Google Services para Firebase
+    }
+}
+
 allprojects {
     repositories {
         google()

@@ -5,7 +5,7 @@ class User {
   final String lastname;
   final String email;
   final String phone;
-  final String? password; // Password ahora es opcional
+  final String? password;
 
   User({
     required this.id,
@@ -14,7 +14,7 @@ class User {
     required this.lastname,
     required this.email,
     required this.phone,
-    this.password, // Permite que sea opcional
+    this.password,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -25,7 +25,7 @@ class User {
       lastname: json['lastname'] ?? 'N/A',
       email: json['email'] ?? 'N/A',
       phone: json['phone'] ?? 'N/A',
-      password: json['password'], // Si el JSON contiene el password
+      password: json['password'],
     );
   }
 
@@ -37,7 +37,7 @@ class User {
       'lastname': lastname,
       'email': email,
       'phone': phone,
-      if (password != null) 'password': password, // Solo incluir si no es null
+      if (password != null) 'password': password,
     };
   }
 }
