@@ -147,7 +147,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (context) =>
-                            ProductDetailScreen(productId: product.id),
+                            ProductDetailScreen(product: product),
                       ),
                     );
                   },
