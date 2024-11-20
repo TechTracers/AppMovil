@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lock_item/screens/home/product_details_screen.dart';
 import 'package:lock_item/services/product_service.dart';
 import 'package:lock_item/services/store_service.dart';
+import 'package:lock_item/widgets/product_card.dart';
 
 import '../../models/product.dart';
 import '../../services/category_service.dart';
@@ -200,65 +201,6 @@ class CategoryButton extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-      ),
-    );
-  }
-}
-
-class ProductCard extends StatelessWidget {
-  final Product product;
-
-  const ProductCard({
-    super.key,
-    required this.product,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 3,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Imagen del producto
-          Expanded(
-            child: Image.network(
-              product.imageUrl,
-              fit: BoxFit.cover,
-              width: double.infinity,
-              errorBuilder: (context, error, stackTrace) {
-                return const Icon(Icons.broken_image, size: 50);
-              },
-            ),
-          ),
-          const SizedBox(height: 8),
-          // Nombre del producto
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Text(
-              product.name,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(height: 4),
-          // Precio del producto
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Text(
-              '\$${product.price}',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.green,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
