@@ -17,8 +17,9 @@ class UserService extends HttpsService {
   // Iniciar sesión
   Future<Map<String, dynamic>?> login(String username, String password) async {
     try {
-      final response =
-          await rawPost(url: produceUrl("login"), body: {"username": username, "password": password});
+      final response = await rawPost(
+          url: produceUrl("login"),
+          body: {"username": username, "password": password});
       if (response.statusCode != 200) {
         _logger.e('Error logging in: ${response.body}');
         return null;
@@ -73,6 +74,42 @@ class UserService extends HttpsService {
     } catch (e) {
       _logger.e('Error fetching user data: $e');
       return null;
+    }
+  }
+
+  // Actualizacion de datos del usuario activo
+  Future<bool> updateUser(User currentUser, User updatedUser) async {
+    try {
+      // Comparar el usuario actual con los datos actualizados
+      final updatedData = {
+        if (currentUser.name != updatedUser.name) 'name': updatedUser.name,
+        if (currentUser.lastname != updatedUser.lastname)
+          'lastname': updatedUser.lastname,
+        if (currentUser.email != updatedUser.email) 'email': updatedUser.email,
+        if (currentUser.phone != updatedUser.phone) 'phone': updatedUser.phone,
+        // No actualizar username si no ha cambiado
+      };
+
+      if (updatedData.isEmpty) {
+        // No hay cambios, no realizar la solicitud
+        return true;
+      }
+
+      final response = await put(
+        url: produceUrl("${currentUser.id}"),
+        body: updatedData,
+      );
+
+      if (response.statusCode != 200) {
+        _logger.e('Error updating user: ${response.body}');
+        return false;
+      }
+
+      _logger.i('User updated successfully: ${response.body}');
+      return true;
+    } catch (e) {
+      _logger.e('Error updating user: $e');
+      return false;
     }
   }
 

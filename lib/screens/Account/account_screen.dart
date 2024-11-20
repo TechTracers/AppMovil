@@ -67,6 +67,98 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 
+  ButtonStyle commonButtonStyle() {
+    return ElevatedButton.styleFrom(
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+      backgroundColor: Colors.black,
+    );
+  }
+
+  void _showEditDialog() {
+    if (user == null) return;
+
+    final TextEditingController nameController =
+        TextEditingController(text: user!.name);
+    final TextEditingController lastnameController =
+        TextEditingController(text: user!.lastname);
+    final TextEditingController emailController =
+        TextEditingController(text: user!.email);
+    final TextEditingController phoneController =
+        TextEditingController(text: user!.phone);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit Profile'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Name'),
+                ),
+                TextField(
+                  controller: lastnameController,
+                  decoration: const InputDecoration(labelText: 'Last Name'),
+                ),
+                TextField(
+                  controller: emailController,
+                  decoration: const InputDecoration(labelText: 'Email'),
+                ),
+                TextField(
+                  controller: phoneController,
+                  decoration: const InputDecoration(labelText: 'Phone'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: commonButtonStyle(),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final updatedUser = User(
+                  id: user!.id,
+                  username: user!.username,
+                  name: nameController.text,
+                  lastname: lastnameController.text,
+                  email: emailController.text,
+                  phone: phoneController.text,
+                );
+
+                final success =
+                    await _userService.updateUser(user!, updatedUser);
+                if (success) {
+                  setState(() {
+                    user = updatedUser;
+                  });
+                  Navigator.pop(context);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Failed to update profile')),
+                  );
+                }
+              },
+              style: commonButtonStyle(),
+              child: const Text(
+                'Save',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -95,6 +187,17 @@ class _AccountScreenState extends State<AccountScreen> {
                   _buildUserInfo('Username', user?.username ?? 'N/A'),
                   _buildUserInfo('Email Address', user?.email ?? 'N/A'),
                   _buildUserInfo('Phone Number', user?.phone ?? 'N/A'),
+                  const SizedBox(height: 20),
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: _showEditDialog,
+                      style: commonButtonStyle(),
+                      child: const Text(
+                        'Edit',
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

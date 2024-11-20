@@ -51,7 +51,8 @@ abstract class HttpsService {
   }
 
   @protected
-  Future<http.Response> post({String? url, required Map<String, dynamic> body}) async {
+  Future<http.Response> post(
+      {String? url, required Map<String, dynamic> body}) async {
     final headers = await getHeaders();
     url ??= getUrl();
     return await http.post(Uri.parse(url),
@@ -73,10 +74,23 @@ abstract class HttpsService {
 
   @protected
   Future<List<Ty>> iterableGet<Ty>(
-      {String? url, required Ty Function(Map<String, dynamic>) converter}) async {
+      {String? url,
+      required Ty Function(Map<String, dynamic>) converter}) async {
     final result = await get(url: url);
     return result.statusCode == HttpStatus.ok
         ? responseMap(result.body, converter)
         : List.empty();
+  }
+
+  @protected
+  Future<http.Response> put(
+      {String? url, required Map<String, dynamic> body}) async {
+    final headers = await getHeaders();
+    url ??= getUrl();
+    return await http.put(
+      Uri.parse(url),
+      headers: headers,
+      body: json.encode(body),
+    );
   }
 }

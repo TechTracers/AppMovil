@@ -5,7 +5,6 @@ import 'package:lock_item/services/store_service.dart';
 
 import '../../models/product.dart';
 import '../../services/category_service.dart';
-import 'package:logger/logger.dart';
 
 class CatalogScreen extends StatefulWidget {
   const CatalogScreen({super.key, required this.storeId, required this.storeName});
@@ -21,7 +20,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
   final ProductService productService = ProductService();
   final CategoryService categoryService = CategoryService();
   final StoreService storeService = StoreService();
-  final Logger _logger = Logger();
   List<Product> allProducts = [];
   List<Product> filteredProducts = [];
   List<Map<String, dynamic>> categories = [];
