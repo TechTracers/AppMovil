@@ -3,6 +3,7 @@ import 'package:lock_item/dto/DatabaseService.dart';
 import 'package:lock_item/screens/home/product_details_screen.dart';
 import 'package:lock_item/services/product_service.dart';
 import 'package:lock_item/models/product.dart';
+import 'package:lock_item/services/store_service.dart';
 import 'package:lock_item/widgets/product_card.dart';
 
 class SaveScreen extends StatefulWidget {
@@ -21,11 +22,9 @@ class _SaveScreenState extends State<SaveScreen> {
 
   Future<List<Product>> _loadFavoriteProducts() async {
     List<int> favoriteIds = await DatabaseService().getFavoriteProductIds();
-    List<Product> products = [];
-    for (int id in favoriteIds) {
-      Product product = await ProductService().fetchProductById(id);
-      products.add(product);
-    }
+    final service = StoreService();
+    List<Product> products =
+        await Future.wait(favoriteIds.map((id) => service.getProductById(id)));
     return products;
   }
 
@@ -33,7 +32,7 @@ class _SaveScreenState extends State<SaveScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Favorite Products"),
+        title: const Text("Favorite Products"),
       ),
       body: FutureBuilder<List<Product>>(
         future: _favoriteProducts,
