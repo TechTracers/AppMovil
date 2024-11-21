@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lock_item/screens/home/home_screen.dart';
 import 'package:lock_item/services/user_service.dart';
+import 'package:lock_item/shared/handlers/jwt_handler.dart';
 import 'package:lock_item/shared/storage/secure.dart';
 import 'package:lock_item/shared/utils/navigations.dart';
 
@@ -34,7 +35,10 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _tryLogin() async {
     final token = await _secureStorage.getToken();
     setState(() {
-      if (token != null) Navigations.namedReplace(context, 'home');
+      if (token != null) {
+        final handler = JwtHandler.from(token);
+        if(!handler.isExpired()) Navigations.namedReplace(context, 'home');
+      }
       _isTryLogin = false;
     });
   }

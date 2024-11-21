@@ -10,7 +10,7 @@ class JwtHandler {
 
   factory JwtHandler.from(String token) {
     final parts = JwtDecoder.decode(token);
-    if(!parts.containsKey(JwtHandler.USER_ID_KEY)) {
+    if (!parts.containsKey(JwtHandler.USER_ID_KEY)) {
       throw ArgumentError("The token not is valid.");
     }
     return JwtHandler._internal(parts);
@@ -19,7 +19,7 @@ class JwtHandler {
   static Future<JwtHandler> fromStorage() async {
     final storage = SecureStorage();
     final token = await storage.getToken();
-    if(token == null) {
+    if (token == null) {
       throw ArgumentError("The token does not saved.");
     }
     return JwtHandler.from(token);
@@ -31,5 +31,14 @@ class JwtHandler {
 
   int getUserId() {
     return int.parse(get(JwtHandler.USER_ID_KEY));
+  }
+
+  DateTime expiredDate() {
+    return DateTime.fromMillisecondsSinceEpoch(0)
+        .add(Duration(seconds: get('exp').toInt()));
+  }
+
+  bool isExpired() {
+    return DateTime.now().isAfter(expiredDate());
   }
 }
