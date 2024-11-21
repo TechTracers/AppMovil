@@ -37,6 +37,18 @@ class StoreService extends HttpsService {
     }
   }
 
+  Future<List<Product>> getAllProducts() async {
+    try {
+      final products = await iterableGet(
+          url: produceUrl("products"), converter: Product.fromJson);
+
+      return products;
+    } catch (e) {
+      _logger.e('Error fetching stores: $e');
+      rethrow;
+    }
+  }
+
   @override
   String getUrl() {
     return StoreService.url;

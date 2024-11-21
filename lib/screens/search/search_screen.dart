@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lock_item/models/product.dart';
 import 'package:lock_item/screens/home/product_details_screen.dart';
-import 'package:lock_item/services/product_service.dart';
+import 'package:lock_item/services/store_service.dart';
 import 'package:lock_item/widgets/product_card.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -16,7 +16,7 @@ class _SearchScreenState extends State<SearchScreen> {
   List<Product> _allProducts = [];
   List<Product> _filteredProducts = [];
   bool _isLoading = true;
-  final ProductService _productService = ProductService();
+  final StoreService _storeService = StoreService();
 
   @override
   void initState() {
@@ -27,7 +27,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _loadProducts() async {
     try {
-      List<Product> products = await _productService.fetchAllProducts();
+      List<Product> products = await _storeService.getAllProducts();
       setState(() {
         _allProducts = products;
         _filteredProducts = products;

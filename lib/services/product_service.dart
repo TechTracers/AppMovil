@@ -13,29 +13,6 @@ class ProductService extends HttpsService {
 
   final Logger _logger = Logger();
 
-Future<List<Product>> fetchAllProducts() async {
-  try {
-    final response = await get(url: ProductService.url);
-    if (response.statusCode != 200) {
-      _logger.e('Failed to load products. Status: ${response.statusCode}');
-      throw Exception('Failed to load products');
-    }
-    final List<dynamic> productListData = json.decode(response.body) as List<dynamic>;
-
-    List<Product> productList = productListData.map((productData) => Product.fromJson(productData as Map<String, dynamic>)).toList();
-
-    for (var product in productList) {
-      print('Product: ${product.name}, Price: ${product.price}');
-    }
-
-    return productList;
-  } catch (e) {
-    _logger.e('Error fetching products: $e');
-    rethrow;
-  }
-}
-
-
   Future<Product> fetchProductById(int productId) async {
     try {
       final response = await getById(productId);
