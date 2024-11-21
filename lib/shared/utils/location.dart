@@ -1,21 +1,28 @@
 import 'package:geolocator/geolocator.dart';
 
-/// Determine the current position of the device.
+enum LocationPermissionStatus {
+  allowed,
+  denied,
+  disabled,
+  deniedForever
+}
+
+/// Requests the position Permission
 ///
 /// When the location services are not enabled or permissions
 /// are denied the `Future` will return an error.
-Future<Position> determineCurrentPosition() async {
+Future<LocationPermissionStatus> requestPositionPermission() async {
   bool serviceEnabled;
-  LocationPermission permission;
-
   // Test if location services are enabled.
   serviceEnabled = await Geolocator.isLocationServiceEnabled();
   if (!serviceEnabled) {
     // Location services are not enabled don't continue
     // accessing the position and request users of the
     // App to enable the location services.
-    return Future.error('Location services are disabled.');
+    return LocationPermissionStatus.disabled;
   }
+
+  LocationPermission permission;
 
   permission = await Geolocator.checkPermission();
   if (permission == LocationPermission.denied) {
@@ -26,17 +33,20 @@ Future<Position> determineCurrentPosition() async {
       // Android's shouldShowRequestPermissionRationale
       // returned true. According to Android guidelines
       // your App should show an explanatory UI now.
-      return Future.error('Location permissions are denied');
+      return LocationPermissionStatus.denied;
     }
   }
 
   if (permission == LocationPermission.deniedForever) {
     // Permissions are denied forever, handle appropriately.
-    return Future.error(
-        'Location permissions are permanently denied, we cannot request permissions.');
+    return LocationPermissionStatus.deniedForever;
   }
 
-  // When we reach here, permissions are granted and we can
-  // continue accessing the position of the device.
+  return LocationPermissionStatus.allowed;
+}
+
+/// Determine the current position of the device.
+Future<Position> determineCurrentPosition() async {
+
   return await Geolocator.getCurrentPosition();
 }

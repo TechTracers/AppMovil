@@ -6,6 +6,14 @@ class FirebaseService {
 
   FirebaseService(this.dbRef);
 
+  Future<Location?> getLastLocation(String iotUID) async {
+    final result =
+        await dbRef.child('positions').child(iotUID).limitToLast(1).get();
+    final data = result.value as Map?;
+
+    return data == null ? null : Location.fromMap(data.values.first);
+  }
+
   Stream<Location?> getLocations(String iotUID) {
     return dbRef.child('positions').child(iotUID).onChildAdded.map((event) {
       final data = event.snapshot.value as Map?;

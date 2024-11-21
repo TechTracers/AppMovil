@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lock_item/screens/Account/login_screen.dart';
 import 'package:lock_item/screens/main_screen.dart';
 import 'package:lock_item/screens/Account/sign_up_screen.dart';
+import 'package:lock_item/shared/utils/location.dart';
 import 'firebase_options.dart'; // Archivo generado automáticamente por FlutterFire CLI
 
 Future<void> main() async {
@@ -11,6 +12,7 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  requestPositionPermission();
   runApp(const MyApp());
 }
 
