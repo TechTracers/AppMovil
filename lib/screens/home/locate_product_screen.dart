@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:lock_item/models/location.dart';
 import 'package:lock_item/shared/utils/location.dart';
+import 'package:lock_item/shared/widget/timer_replace.dart';
 import '../../services/firebase_service.dart';
 
 class LocateProductScreen extends StatefulWidget {
@@ -40,6 +41,7 @@ class _LocateProductScreenState extends State<LocateProductScreen> {
   void getCurrentPosition() async {
     final position = await determineCurrentPosition();
     setState(() {
+      print("location");
       this.position = position;
       _isPositionLoaded = true;
     });
@@ -56,7 +58,6 @@ class _LocateProductScreenState extends State<LocateProductScreen> {
       setState(() {
         this.position = position;
         _centerMap();
-        print("Position: Update position");
       });
     });
   }
@@ -100,109 +101,134 @@ class _LocateProductScreenState extends State<LocateProductScreen> {
       appBar: AppBar(
         title: const Text('Localizar Producto'),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Stack(
-              children: [
-                FlutterMap(
-                  mapController: _mapController,
-                  options: MapOptions(
-                    initialCenter: LatLng(
-                      productLocation!.latitude,
-                      productLocation!.longitude,
+      body: TimerReplace(
+        duration: const Duration(seconds: 45),
+        builder: (context) => isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Stack(
+                children: [
+                  FlutterMap(
+                    mapController: _mapController,
+                    options: MapOptions(
+                      initialCenter: LatLng(
+                        productLocation!.latitude,
+                        productLocation!.longitude,
+                      ),
+                      onPositionChanged: (position, gesture) {
+                        _currentZoom = position.zoom;
+                      },
+                      initialZoom: _currentZoom,
                     ),
-                    onPositionChanged: (position, gesture) {
-                      _currentZoom = position.zoom;
-                    },
-                    initialZoom: _currentZoom,
+                    children: [
+                      TileLayer(
+                        urlTemplate:
+                            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                        subdomains: const ['a', 'b', 'c'],
+                      ),
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            point: LatLng(productLocation!.latitude,
+                                productLocation!.longitude),
+                            width: 80,
+                            height: 80,
+                            child: const Icon(
+                              Icons.location_pin,
+                              color: Colors.red,
+                              size: 40.0,
+                            ),
+                          ),
+                          Marker(
+                            point:
+                                LatLng(position!.latitude, position!.longitude),
+                            width: 80,
+                            height: 80,
+                            child: const Icon(
+                              Icons.location_pin,
+                              color: Colors.green,
+                              size: 40.0,
+                            ),
+                          )
+                        ],
+                      ),
+                    ],
                   ),
-                  children: [
-                    TileLayer(
-                      urlTemplate:
-                          "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                      subdomains: const ['a', 'b', 'c'],
-                    ),
-                    MarkerLayer(
-                      markers: [
-                        Marker(
-                          point: LatLng(productLocation!.latitude,
-                              productLocation!.longitude),
-                          width: 80,
-                          height: 80,
+                  Positioned(
+                    bottom: 20,
+                    right: 10,
+                    child: Column(
+                      children: [
+                        FloatingActionButton(
+                          onPressed: () => _changeZoom(1),
+                          child: const Icon(Icons.zoom_in, color: Colors.black),
+                        ),
+                        const SizedBox(height: 5),
+                        FloatingActionButton(
+                          onPressed: () => _changeZoom(-1),
                           child: const Icon(
-                            Icons.location_pin,
-                            color: Colors.red,
-                            size: 40.0,
+                            Icons.zoom_out,
+                            color: Colors.black,
                           ),
                         ),
-                        Marker(
-                          point:
-                              LatLng(position!.latitude, position!.longitude),
-                          width: 80,
-                          height: 80,
-                          child: const Icon(
-                            Icons.location_pin,
-                            color: Colors.green,
-                            size: 40.0,
-                          ),
+                        const SizedBox(
+                          height: 5,
+                        ),
+                        FloatingActionButton(
+                          onPressed: _centerMap,
+                          backgroundColor: Colors.white,
+                          child: const Icon(Icons.center_focus_strong,
+                              color: Colors.black),
                         )
                       ],
                     ),
-                  ],
-                ),
-                Positioned(
-                  bottom: 20,
-                  right: 10,
-                  child: Column(
-                    children: [
-                      FloatingActionButton(
-                        onPressed: () => _changeZoom(1),
-                        child: const Icon(Icons.zoom_in, color: Colors.black),
-                      ),
-                      const SizedBox(height: 5),
-                      FloatingActionButton(
-                        onPressed: () => _changeZoom(-1),
-                        child: const Icon(
-                          Icons.zoom_out,
-                          color: Colors.black,
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 5,
-                      ),
-                      FloatingActionButton(
-                        onPressed: _centerMap,
-                        backgroundColor: Colors.white,
-                        child: const Icon(Icons.center_focus_strong,
-                            color: Colors.black),
-                      )
-                    ],
                   ),
-                ),
-                Positioned(
-                  bottom: 20,
-                  left: 10,
-                  child: Column(
-                    children: [
-                      FloatingActionButton(
+                  Positioned(
+                    bottom: 20,
+                    left: 10,
+                    child: Column(
+                      children: [
+                        FloatingActionButton(
                           onPressed: () => _changePosition(
                               LatLng(productLocation!.latitude,
                                   productLocation!.longitude),
                               12),
-                        child: const Icon(Icons.circle_outlined, color: Colors.red,),
-                      ),
-                      const SizedBox(height: 5,),
-                      FloatingActionButton(
+                          child: const Icon(
+                            Icons.circle_outlined,
+                            color: Colors.red,
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 5,
+                        ),
+                        FloatingActionButton(
                           onPressed: () => _changePosition(
                               LatLng(position!.latitude, position!.longitude),
                               12),
-                        child: const Icon(Icons.circle_outlined, color: Colors.green,),
-                      ),
-                    ],
-                  ),
-                )
-              ],
-            ),
+                          child: const Icon(
+                            Icons.circle_outlined,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                ],
+              ),
+        replaceBuilder: (context) {
+          String message = "Something went wrong in locating the product: ";
+          if (!_isPositionLoaded) {
+            message += "Device position not obtained.";
+          } else if (!_isProductLoaded) {
+            message += "Product position not obtained.";
+          } else {
+            message += "Unknown error";
+          }
+
+          return Center(
+            child: Text(message),
+          );
+        },
+      ),
     );
   }
 }
