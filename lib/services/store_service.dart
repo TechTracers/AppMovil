@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:lock_item/shared/services/https_service.dart';
 import 'package:logger/logger.dart';
 import '../models/product.dart';
@@ -31,6 +33,20 @@ class StoreService extends HttpsService {
           converter: Product.fromJson);
 
       return products;
+    } catch (e) {
+      _logger.e('Error fetching stores: $e');
+      rethrow;
+    }
+  }
+
+  Future<Product> getProductById(int id) async {
+    try {
+      final product =
+          await get(url: produceUrl("products", others: [id.toString()]));
+      if (product.statusCode == 200) {
+        return Product.fromJson(jsonDecode(product.body));
+      }
+      throw ArgumentError("Not found product");
     } catch (e) {
       _logger.e('Error fetching stores: $e');
       rethrow;
